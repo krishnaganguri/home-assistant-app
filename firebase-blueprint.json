@@ -1,0 +1,68 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user-specific settings and home health score.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique user ID from Firebase Auth." },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "homeHealthScore": { "type": "number", "description": "Calculated score from 0-100." },
+        "lastCalculated": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Appliance": {
+      "title": "Appliance",
+      "description": "Represents a home appliance.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "uid": { "type": "string", "description": "Owner's user ID." },
+        "name": { "type": "string", "description": "User-friendly name (e.g., Kitchen Fridge)." },
+        "type": { "type": "string", "description": "Appliance category (e.g., Refrigerator, HVAC)." },
+        "brand": { "type": "string" },
+        "model": { "type": "string" },
+        "serialNumber": { "type": "string" },
+        "purchaseDate": { "type": "string", "format": "date" },
+        "manualUrl": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "type"]
+    },
+    "MaintenanceTask": {
+      "title": "Maintenance Task",
+      "description": "A scheduled maintenance activity for an appliance.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "uid": { "type": "string" },
+        "applianceId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "instructions": { "type": "string", "description": "Step-by-step guide." },
+        "dueDate": { "type": "string", "format": "date" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "completed", "overdue"] },
+        "intervalMonths": { "type": "number", "description": "Frequency of the task." }
+      },
+      "required": ["uid", "applianceId", "title", "dueDate", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "UserProfile",
+      "description": "User profile documents."
+    },
+    "/appliances/{applianceId}": {
+      "schema": "Appliance",
+      "description": "Collection of home appliances."
+    },
+    "/tasks/{taskId}": {
+      "schema": "MaintenanceTask",
+      "description": "Collection of maintenance tasks."
+    }
+  }
+}

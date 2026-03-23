@@ -1,0 +1,5 @@
+{
+  "name": "Home Maintenance Assistant",
+  "description": "Intelligent appliance maintenance tracker with OCR scanning, automated scheduling, and home health insights.",
+  "requestFramePermissions": ["camera"]
+}

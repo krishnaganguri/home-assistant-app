@@ -1,0 +1,78 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: users
+    // Document ID: {uid}
+    // Fields: uid, displayName, email, homeHealthScore, lastCalculated
+    //
+    // Collection: appliances
+    // Document ID: {applianceId}
+    // Fields: id, uid, name, type, brand, model, serialNumber, purchaseDate, manualUrl, imageUrl, createdAt
+    //
+    // Collection: tasks
+    // Document ID: {taskId}
+    // Fields: id, uid, applianceId, title, description, instructions, dueDate, completedAt, status, intervalMonths
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
+    }
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // Domain Validators
+    function isValidUser(data) {
+      return data.uid == request.auth.uid &&
+             data.email is string && isValidEmail(data.email) &&
+             (data.homeHealthScore == null || (data.homeHealthScore is number && data.homeHealthScore >= 0 && data.homeHealthScore <= 100));
+    }
+
+    function isValidAppliance(data) {
+      return data.uid == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.type is string && data.type.size() > 0;
+    }
+
+    function isValidTask(data) {
+      return data.uid == request.auth.uid &&
+             data.applianceId is string &&
+             data.title is string && data.title.size() > 0 &&
+             data.status in ['pending', 'completed', 'overdue'];
+    }
+
+    // Rules
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && isValidUser(request.resource.data);
+      allow update: if isOwner(uid) && isValidUser(request.resource.data);
+    }
+
+    match /appliances/{applianceId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && uidUnchanged() && isValidAppliance(request.resource.data);
+      allow update: if isDocOwner() && uidUnchanged() && isValidAppliance(request.resource.data);
+      allow delete: if isDocOwner();
+    }
+
+    match /tasks/{taskId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && uidUnchanged() && isValidTask(request.resource.data);
+      allow update: if isDocOwner() && uidUnchanged() && isValidTask(request.resource.data);
+      allow delete: if isDocOwner();
+    }
+  }
+}
